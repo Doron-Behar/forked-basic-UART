@@ -17,25 +17,25 @@ architecture arc OF testbench IS
 	signal uart_tx:std_logic;
 	component reciever
 		port(
-			pmod_1	:out std_logic;
 			clk100mhz	:in std_logic;
-			pmod_2	:out std_logic;
-			uart_rx	:in std_logic;
-			led		:out std_logic_vector(7 downto 0);
-			reset_btn:in std_logic;
-			uart_tx	:out std_logic
+			reset		:in std_logic;
+			uart_rx		:in std_logic;
+			led			:out std_logic_vector(7 downto 0);
+			uart_tx		:out std_logic;
+			pmod_1		:out std_logic; -- debug outputs
+			pmod_2		:out std_logic
 	);
 	end component;
 begin
 	reciever_inst:reciever
 		port map(
-			pmod_1	=>pmod_1,
 			clk100mhz	=>clk100mhz,
-			pmod_2	=>pmod_2,
-			uart_rx	=>uart_rx,
-			led		=>led,
-			reset_btn	=>reset,
-			uart_tx	=>uart_tx
+			reset		=>reset,
+			uart_rx		=>uart_rx,
+			led			=>led,
+			uart_tx		=>uart_tx,
+			pmod_1		=>pmod_1,
+			pmod_2		=>pmod_2
 		);
 	clk100mhz<=not clk100mhz after 5 ns; -- 10 ns = (1/100Mhz)/2, T(50Mhz)=20ns
 	reset<='0','1' after 1 us;

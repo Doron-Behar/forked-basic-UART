@@ -5,13 +5,13 @@ use IEEE.math_real.all;
 
 entity reciever is
 	port(
-		clk100mhz			:in std_logic;
-		led			:out std_logic_vector(7 downto 0);
+		clk100mhz	:in std_logic;
+		reset		:in std_logic;
 		uart_rx		:in std_logic;
+		led			:out std_logic_vector(7 downto 0);
 		uart_tx		:out std_logic;
 		pmod_1		:out std_logic; -- debug outputs
-		pmod_2		:out std_logic;
-		reset_btn	:in std_logic
+		pmod_2		:out std_logic
 	);
 end reciever;
 
@@ -33,7 +33,6 @@ architecture arc of reciever is
 		last:reciever_state_type;
 	end record;
 	signal reciever:reciever_type;
-	signal reset:std_logic;
 	--====================================================================
 	--------------------------------UART----------------------------------
 	--====================================================================
@@ -45,18 +44,28 @@ architecture arc of reciever is
 			-- for a frequency of 2083333hz you need to put 3 as a divisor
 	type UART_fsm_state_type is (idle,active); -- common to both RX and TX FSM
 	type UART_rxs_state_type is record
-		state:UART_fsm_state_type;					-- FSM state
-		counter:std_logic_vector(3 downto 0);	-- tick count
-		bits:std_logic_vector(7 downto 0);		-- received bits
-		nbits:std_logic_vector(3 downto 0);		-- number of received bits (includes start bit)
-		enable:std_logic;						-- signal we received a new byte
+		-- FSM state:
+		state:UART_fsm_state_type;
+		-- tick count:
+		counter:std_logic_vector(3 downto 0);
+		-- received bits:
+		bits:std_logic_vector(7 downto 0);
+		-- number of received bits (includes start bit):
+		nbits:std_logic_vector(3 downto 0);
+		-- signal we received a new byte:
+		enable:std_logic;
 	end record;
 	type UART_txs_state_type is record
-		state:UART_fsm_state_type; -- FSM state
-		counter:std_logic_vector(3 downto 0); -- tick count
-		bits:std_logic_vector(8 downto 0); -- bits to emit, includes start bit
-		nbits:std_logic_vector(3 downto 0); -- number of bits left to send
-		ready:std_logic; -- signal we are accepting a new byte
+		-- FSM state:
+		state:UART_fsm_state_type;
+		-- tick count:
+		counter:std_logic_vector(3 downto 0);
+		-- bits to emit, includes start bit:
+		bits:std_logic_vector(8 downto 0);
+		-- number of bits left to send:
+		nbits:std_logic_vector(3 downto 0);
+		-- signal we are accepting a new byte:
+		ready:std_logic;
 	end record;
 	type UART_rxs_type is record
 		current:UART_rxs_state_type;
@@ -68,7 +77,8 @@ architecture arc of reciever is
 	end record;
 	type UART_sample_type is record
 		clk:std_logic;
-		counter:std_logic_vector(integer(ceil(log2(real(divisor))))-1 downto 0); -- should fit values in 0..DIVISOR-1
+		-- should fit values in 0..DIVISOR-1:
+		counter:std_logic_vector(integer(ceil(log2(real(divisor))))-1 downto 0);
 	end record;
 	type UART_rx_type is record
 		-- received byte:
@@ -106,7 +116,7 @@ begin
 	-- sample signal at 16x baud rate, 1 clk spikes:
 	sample_process:process(clk100mhz,reset) is
 	begin
-		if reset='1' then
+		if reset='0' then
 			UART.sample.counter<=(others=>'0');
 			UART.sample.clk<='0';
 		elsif rising_edge(clk100mhz) then
@@ -122,7 +132,7 @@ begin
 	-- RX, TX state registers update at each clk, and reset
 	reg_process:process(clk100mhz,reset) is
 	begin
-		if reset='1' then
+		if reset='0' then
 			UART.rxs.last.state<=idle;
 			UART.rxs.last.bits<=(others=>'0');
 			UART.rxs.last.nbits<=(others=>'0');
@@ -229,19 +239,11 @@ begin
 	--====================================================================
 	------------------------------reciever--------------------------------
 	--====================================================================
-	reset_control:process(reset_btn) is
-	begin
-		if reset_btn = '1' then
-			reset<='0';
-		else
-			reset<='1';
-		end if;
-	end process;
 	pmod_1<=UART.tx.enable;
 	pmod_2<=UART.tx.ready;
 	fsm_clk:process(clk100mhz,reset) is
 	begin
-		if reset='1' then
+		if reset='0' then
 			reciever.last.state<=idle;
 			reciever.last.tx.data<=(others=>'0');
 			reciever.last.tx.enable<='0';
