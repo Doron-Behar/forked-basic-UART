@@ -38,13 +38,13 @@ architecture arc of reciever is
 			tx			:out std_logic
 		);
 	end component;
-	type fsm_state_type is (idle,received,emitting);
+	type reciever_fsm_state_type is (idle,received,emitting);
 	type reciever_tx_type is record
 		data:std_logic_vector(7 downto 0);
 		enable:std_logic;
 	end record;
 	type reciever_state_type is record
-		state:fsm_state_type;
+		state:reciever_fsm_state_type;
 		tx:reciever_tx_type;
 	end record;
 	type reciever_type is record
@@ -53,14 +53,26 @@ architecture arc of reciever is
 	end record;
 	signal reciever:reciever_type;
 	signal reset:std_logic;
+	--====================================================================
+	--------------------------------UART----------------------------------
+	--====================================================================
 	type UART_rx_type is record
-		data:std_logic_vector(7 downto 0);
-		enable:std_logic;
+		-- received byte:
+		data	:std_logic_vector(7 downto 0);
+		-- validates received byte (1 system clock spike):
+		enable	:std_logic;
+		--physical
+		buff	:std_logic;
 	end record;
 	type UART_tx_type is record
-		data:std_logic_vector(7 downto 0);
-		enable:std_logic;
-		ready:std_logic;
+		-- byte to send:
+		data	:std_logic_vector(7 downto 0);
+		-- validates byte to send if tx_ready is '1':
+		enable	:std_logic;
+		-- if '1', we can send a new byte, otherwise we won't take it:
+		ready	:std_logic;
+		--physical
+		buff	:std_logic;
 	end record;
 	type UART_type is record
 		rx:UART_rx_type;
@@ -68,6 +80,9 @@ architecture arc of reciever is
 	end record;
 	signal UART:UART_type;
 begin
+	--output test
+	UART.rx.buff<=uart_rx;
+	uart_tx<=UART.tx.buff;
 	basic_uart_inst:basic_uart
 		generic map(
 			DIVISOR => 2604 -- for 2400hz
@@ -80,8 +95,8 @@ begin
 			tx_data		=>UART.tx.data,
 			tx_enable	=>UART.tx.enable,
 			tx_ready	=>UART.tx.ready,
-			rx			=>uart_rx,
-			tx			=>uart_tx
+			rx			=>UART.rx.buff,
+			tx			=>UART.tx.buff
 		);
 	reset_control:process(reset_btn) is
 	begin
@@ -91,8 +106,8 @@ begin
 			reset<='1';
 		end if;
 	end process;
-	pmod_1 <= UART.tx.enable;
-	pmod_2 <= UART.tx.ready;
+	pmod_1<=UART.tx.enable;
+	pmod_2<=UART.tx.ready;
 	fsm_clk:process(sys_clk,reset) is
 	begin
 		if reset='1' then
