@@ -17,40 +17,40 @@ end reciever;
 architecture arc of reciever is
 	component basic_uart is
 		generic (
-			DIVISOR:natural  -- DIVISORprocess100,000,000 / (16 x BAUD_RATE)
-			-- 2400 -> 2604
-			-- 9600 -> 651
-			-- 115200 -> 54
-			-- 1562500 -> 4
-			-- 2083333 -> 3
+			DIVISOR:natural  -- DIVISOR = 100,000,000 / (16 x BAUD_RATE)
+				-- for a frequency of 2400hz you need to put 2604 as a divisor
+				-- for a frequency of 9600hz you need to put 651 as a divisor
+				-- for a frequency of 115200hz you need to put 54 as a divisor
+				-- for a frequency of 1562500hz you need to put 4 as a divisor
+				-- for a frequency of 2083333hz you need to put 3 as a divisor
 		);
 		port (
 			clk			:in std_logic;
 			reset		:in std_logic;
 			-- Client interface
-			rx_data		:out std_logic_vector(7 downto 0);-- received byte
-			rx_enable	:out std_logic;-- validates received byte (1 system clock spike)
-			tx_data		:in std_logic_vector(7 downto 0);-- byte to send
-			tx_enable	:in std_logic;-- validates byte to send if tx_ready is '1'
-			tx_ready	:out std_logic;-- if '1', we can send a new byte, otherwise we won't take it
+			rx_data		:out std_logic_vector(7 downto 0);	-- received byte
+			rx_enable	:out std_logic;						-- validates received byte (1 system clock spike)
+			tx_data		:in std_logic_vector(7 downto 0);	-- byte to send
+			tx_enable	:in std_logic;						-- validates byte to send if tx_ready is '1'
+			tx_ready	:out std_logic;						-- if '1', we can send a new byte, otherwise we won't take it
 			-- Physical interface
 			rx			:in std_logic;
 			tx			:out std_logic
 		);
 	end component;
-	type fsm_state_t is (idle,received,emitting);
+	type fsm_state_type is (idle,received,emitting);
 	type state_t is record
-		fsm_state: fsm_state_t; -- FSM state
-		tx_data: std_logic_vector(7 downto 0);
-		tx_enable: std_logic;
+		fsm_state:fsm_state_type; -- FSM state
+		tx_data:std_logic_vector(7 downto 0);
+		tx_enable:std_logic;
 	end record;
+	signal state,state_next:state_t;
 	signal reset: std_logic;
 	signal uart_rx_data: std_logic_vector(7 downto 0);
 	signal uart_rx_enable: std_logic;
 	signal uart_tx_data: std_logic_vector(7 downto 0);
 	signal uart_tx_enable: std_logic;
 	signal uart_tx_ready: std_logic;
-	signal state,state_next:state_t;
 begin
 	basic_uart_inst:basic_uart
 		generic map(
@@ -83,10 +83,8 @@ begin
 			state.fsm_state<=idle;
 			state.tx_data<=(others=>'0');
 			state.tx_enable<='0';
-		else
-			if rising_edge(sys_clk) then
-				state<=state_next;
-			end if;
+		elsif rising_edge(sys_clk) then
+			state<=state_next;
 		end if;
 	end process;
 	fsm_next:process(state,uart_rx_enable,uart_rx_data,uart_tx_ready) is
