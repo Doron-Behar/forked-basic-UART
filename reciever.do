@@ -1,4 +1,4 @@
-vcom -2008 basic-UART.vhd reciever.vhd reciever.TB.vhd
+vcom -2008 reciever.vhd reciever.TB.vhd
 vsim -voptargs=+acc testbench
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -format Logic /testbench/reset
