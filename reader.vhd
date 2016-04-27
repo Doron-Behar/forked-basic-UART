@@ -3,7 +3,7 @@ use IEEE.std_logic_1164.all;
 use IEEE.std_logic_unsigned.all;
 use IEEE.math_real.all;
 
-entity reciever is
+entity reader is
 	port(
 		clk100mhz	:in std_logic;
 		reset		:in std_logic;
@@ -12,9 +12,9 @@ entity reciever is
 		uart_tx		:out std_logic;
 		pmod		:out std_logic_vector(1 downto 0) -- debug outputs
 	);
-end reciever;
+end reader;
 
-architecture arc of reciever is
+architecture arc of reader is
 	--====================================================================
 	------------------------------reciever--------------------------------
 	--====================================================================
