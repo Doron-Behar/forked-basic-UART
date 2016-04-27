@@ -39,10 +39,13 @@ architecture arc of reciever is
 		);
 	end component;
 	type fsm_state_type is (idle,received,emitting);
+	type reciever_tx_type is record
+		data:std_logic_vector(7 downto 0);
+		enable:std_logic;
+	end record;
 	type reciever_state_type is record
-		state:fsm_state_type; -- FSM state
-		tx_data:std_logic_vector(7 downto 0);
-		tx_enable:std_logic;
+		state:fsm_state_type;
+		tx:reciever_tx_type;
 	end record;
 	type reciever_type is record
 		current:reciever_state_type;
@@ -94,8 +97,8 @@ begin
 	begin
 		if reset='1' then
 			reciever.last.state<=idle;
-			reciever.last.tx_data<=(others=>'0');
-			reciever.last.tx_enable<='0';
+			reciever.last.tx.data<=(others=>'0');
+			reciever.last.tx.enable<='0';
 		elsif rising_edge(sys_clk) then
 			reciever.last<=reciever.current;
 		end if;
@@ -106,26 +109,26 @@ begin
 		case reciever.last.state is
 			when idle=>
 				if UART.rx.enable = '1' then
-					reciever.current.tx_data<=UART.rx.data;
-					reciever.current.tx_enable<='0';
+					reciever.current.tx.data<=UART.rx.data;
+					reciever.current.tx.enable<='0';
 					reciever.current.state<=received;
 				end if;
 			when received=>
 				if UART.tx.ready = '1' then
-					reciever.current.tx_enable<='1';
+					reciever.current.tx.enable<='1';
 					reciever.current.state<=emitting;
 				end if;
 			when emitting=>
 				if UART.tx.ready = '0' then
-					reciever.current.tx_enable<='0';
+					reciever.current.tx.enable<='0';
 					reciever.current.state<=idle;
 				end if;
 		end case;
 	end process;
 	fsm_output:process(reciever.last) is
 	begin
-		UART.tx.enable<=reciever.last.tx_enable;
-		UART.tx.data<=reciever.last.tx_data;
-		led<=reciever.last.tx_data;
+		UART.tx.enable<=reciever.last.tx.enable;
+		UART.tx.data<=reciever.last.tx.data;
+		led<=reciever.last.tx.data;
 	end process;
 end arc;
