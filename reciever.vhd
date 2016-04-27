@@ -7,11 +7,10 @@ entity reciever is
 	port(
 		clk100mhz	:in std_logic;
 		reset		:in std_logic;
-		uart_rx		:in std_logic;
-		led			:out std_logic_vector(7 downto 0);
+		data		:in std_logic;
+		byte		:out std_logic_vector(7 downto 0);
 		uart_tx		:out std_logic;
-		pmod_1		:out std_logic; -- debug outputs
-		pmod_2		:out std_logic
+		pmod		:out std_logic_vector(1 downto 0) -- debug outputs
 	);
 end reciever;
 
@@ -108,7 +107,7 @@ architecture arc of reciever is
 	signal UART:UART_type;
 begin
 	--output test
-	UART.rx.buff<=uart_rx;
+	UART.rx.buff<=data;
 	uart_tx<=UART.tx.buff;
 	--====================================================================
 	--------------------------------UART----------------------------------
@@ -239,8 +238,8 @@ begin
 	--====================================================================
 	------------------------------reciever--------------------------------
 	--====================================================================
-	pmod_1<=UART.tx.enable;
-	pmod_2<=UART.tx.ready;
+	pmod(0)<=UART.tx.enable;
+	pmod(1)<=UART.tx.ready;
 	fsm_clk:process(clk100mhz,reset) is
 	begin
 		if reset='0' then
@@ -277,6 +276,6 @@ begin
 	begin
 		UART.tx.enable<=reciever.last.tx.enable;
 		UART.tx.data<=reciever.last.tx.data;
-		led<=reciever.last.tx.data;
+		byte<=reciever.last.tx.data;
 	end process;
 end arc;

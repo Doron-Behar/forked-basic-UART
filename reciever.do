@@ -3,11 +3,10 @@ vsim -voptargs=+acc testbench
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -format Logic /testbench/reset
 add wave -noupdate -format Logic /testbench/data_clk
-add wave -noupdate -format Logic /testbench/uart_rx
-add wave -noupdate -format Literal -radix hexadecimal /testbench/led
+add wave -noupdate -format Logic /testbench/data
+add wave -noupdate -format Literal -radix hexadecimal /testbench/byte
 add wave -noupdate -format Logic /testbench/uart_tx
-add wave -noupdate -format Logic /testbench/pmod_1
-add wave -noupdate -format Logic /testbench/pmod_2
+add wave -noupdate -format Logic /testbench/pmod
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {16241234 ns} 0}
 configure wave -namecolwidth 150
