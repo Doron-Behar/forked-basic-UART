@@ -50,11 +50,20 @@ architecture arc of reciever is
 	end record;
 	signal reciever:reciever_type;
 	signal reset:std_logic;
-	signal uart_rx_data:std_logic_vector(7 downto 0);
-	signal uart_rx_enable:std_logic;
-	signal uart_tx_data:std_logic_vector(7 downto 0);
-	signal uart_tx_enable:std_logic;
-	signal uart_tx_ready:std_logic;
+	type UART_rx_type is record
+		data:std_logic_vector(7 downto 0);
+		enable:std_logic;
+	end record;
+	type UART_tx_type is record
+		data:std_logic_vector(7 downto 0);
+		enable:std_logic;
+		ready:std_logic;
+	end record;
+	type UART_type is record
+		rx:UART_rx_type;
+		tx:UART_tx_type;
+	end record;
+	signal UART:UART_type;
 begin
 	basic_uart_inst:basic_uart
 		generic map(
@@ -63,11 +72,11 @@ begin
 		port map(
 			clk			=>sys_clk,
 			reset		=>reset,
-			rx_data		=>uart_rx_data,
-			rx_enable	=>uart_rx_enable,
-			tx_data		=>uart_tx_data,
-			tx_enable	=>uart_tx_enable,
-			tx_ready	=>uart_tx_ready,
+			rx_data		=>UART.rx.data,
+			rx_enable	=>UART.rx.enable,
+			tx_data		=>UART.tx.data,
+			tx_enable	=>UART.tx.enable,
+			tx_ready	=>UART.tx.ready,
 			rx			=>uart_rx,
 			tx			=>uart_tx
 		);
@@ -79,8 +88,8 @@ begin
 			reset<='1';
 		end if;
 	end process;
-	pmod_1 <= uart_tx_enable;
-	pmod_2 <= uart_tx_ready;
+	pmod_1 <= UART.tx.enable;
+	pmod_2 <= UART.tx.ready;
 	fsm_clk:process(sys_clk,reset) is
 	begin
 		if reset='1' then
@@ -91,23 +100,23 @@ begin
 			reciever.last<=reciever.current;
 		end if;
 	end process;
-	fsm_next:process(reciever.last,uart_rx_enable,uart_rx_data,uart_tx_ready) is
+	fsm_next:process(reciever.last,UART.rx.enable,UART.rx.data,UART.tx.ready) is
 	begin
 		reciever.current<=reciever.last;
 		case reciever.last.state is
 			when idle=>
-				if uart_rx_enable = '1' then
-					reciever.current.tx_data<=uart_rx_data;
+				if UART.rx.enable = '1' then
+					reciever.current.tx_data<=UART.rx.data;
 					reciever.current.tx_enable<='0';
 					reciever.current.state<=received;
 				end if;
 			when received=>
-				if uart_tx_ready = '1' then
+				if UART.tx.ready = '1' then
 					reciever.current.tx_enable<='1';
 					reciever.current.state<=emitting;
 				end if;
 			when emitting=>
-				if uart_tx_ready = '0' then
+				if UART.tx.ready = '0' then
 					reciever.current.tx_enable<='0';
 					reciever.current.state<=idle;
 				end if;
@@ -115,8 +124,8 @@ begin
 	end process;
 	fsm_output:process(reciever.last) is
 	begin
-		uart_tx_enable<=reciever.last.tx_enable;
-		uart_tx_data<=reciever.last.tx_data;
+		UART.tx.enable<=reciever.last.tx_enable;
+		UART.tx.data<=reciever.last.tx_data;
 		led<=reciever.last.tx_data;
 	end process;
 end arc;
